@@ -1,79 +1,71 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using AsmResolver.DotNet;
 
-namespace Costura_Decompressor
+namespace CosturaDecompressor;
+
+public sealed class ExtractorNew
 {
-    public class ExtractorNew
+    private readonly ModuleDefinition _module;
+    private readonly string _defaultOutputPath;
+
+    public ExtractorNew(ModuleDefinition module)
     {
-        private readonly ModuleDefinition _module;
+        _module = module;
+        _defaultOutputPath = _module.GetOutputPath() ?? string.Empty;
+    }
 
-        private readonly string _outputPath;
-
-        public ExtractorNew(ModuleDefinition module)
+    /// <summary>Extracts resources to provided folder; falls back to default if empty.</summary>
+    public void Run(string outputPath = "")
+    {
+        var target = string.IsNullOrWhiteSpace(outputPath) ? _defaultOutputPath : outputPath;
+        
+        if (!ExtractResources(out var resources))
         {
-            _module = module;
-            _outputPath = module.GetOutputPath();
+            Logger.Error("No Costura resources found");
+            return;
         }
 
-        public void Run()
+        SaveResources(resources, target);
+    }
+
+    private bool ExtractResources(out Dictionary<byte[], string> resources)
+    {
+        resources = new Dictionary<byte[], string>();
+
+        if (_module.Resources.Count == 0)
+            return false;
+
+        foreach (var resource in _module.Resources)
         {
-            if (ExtractResources(out var resources))
+            if (!resource.IsEmbedded) continue;
+            if (resource.Name.Length < 19) continue;
+            var name = resource.Name?.ToString();
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!name.StartsWith("costura.") || !name.EndsWith(".compressed"))
+                continue;
+
+            name = name.Substring(8, name.LastIndexOf(".compressed") - 8);
+            var data = resource.GetData();
+
+            if (data != null)
             {
-                SaveResources(resources);
-                return;
+                resources.Add(data.Decompress(), name);
+                Logger.Success($"Extracted {name}");
             }
-
-            Logger.Error("Could not find or extract costura embedded resources");
         }
 
-        private bool ExtractResources(out Dictionary<byte[], string> resources)
-        {
-            resources = new Dictionary<byte[], string>();
+        return resources.Count != 0;
+    }
 
-            if (_module.Resources.Count == 0)
-                return false;
+    private void SaveResources(Dictionary<byte[], string> resources, string outputPath)
+    {
+        if (!Directory.Exists(outputPath))
+            Directory.CreateDirectory(outputPath);
 
-            foreach (var resource in _module.Resources)
-            {
-                if (!resource.IsEmbedded)
-                    continue;
+        foreach (var (data, name) in resources)
+            File.WriteAllBytes(Path.Combine(outputPath, name), data);
 
-                string name = resource.Name;
-
-                if (name.Length < 19)
-                    continue;
-
-                if (!name.StartsWith("costura.") || !name.EndsWith(".compressed"))
-                    continue;
-
-                // Strip costura. and .compressed from the resource name
-                name = name.Substring(8, name.LastIndexOf(".compressed") - 8);
-
-                byte[] data = resource.GetData();
-
-                if (data != null)
-                    resources.Add(data.Decompress(), name);
-
-                Logger.Success($"Extracted costura resource {name}");
-            }
-
-            return resources.Count != 0;
-        }
-
-        private void SaveResources(Dictionary<byte[], string> extractedResources)
-        {
-            if (!Directory.Exists(_outputPath))
-                Directory.CreateDirectory(_outputPath);
-
-            foreach (var entry in extractedResources)
-            {
-                string fullPath = Path.Combine(_outputPath, entry.Value);
-                File.WriteAllBytes(fullPath, entry.Key);
-            }
-
-            Logger.Info($"Saved {extractedResources.Count} extracted Resources to {_outputPath}");
-        }
+        Logger.Info($"Saved {resources.Count} files to {outputPath}");
     }
 }

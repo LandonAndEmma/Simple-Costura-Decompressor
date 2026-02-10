@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CosturaDecompressor.MainWindow"
+        Title="Costura Decompressor"
+        Width="900" Height="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+
+  <DockPanel Margin="16">
+    <!-- Header -->
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+      <TextBlock Text="Costura Decompressor" FontSize="24" FontWeight="Bold" Margin="0,0,0,8" />
+      <TextBlock Text="Extract embedded assemblies from Costura-packed executables" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+    </StackPanel>
+
+    <!-- Action Buttons -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+      <Button x:Name="BrowseButton" Content="📂 Open Files" Width="120" Padding="8,4" />
+      <Button x:Name="RemoveButton" Content="🗑️ Remove" Width="100" Padding="8,4" />
+      <Button Content="⚙️ Settings" Width="100" Padding="8,4" />
+      <Separator Height="30" Margin="8,0" />
+      <Button x:Name="ExtractButton" Content="✓ Extract" Width="120" Padding="8,4" />
+      <Button x:Name="ClearButton" Content="✕ Clear All" Width="120" Padding="8,4" />
+    </StackPanel>
+
+    <!-- Main Content -->
+    <Grid ColumnDefinitions="2*,3*" Margin="0,0,0,12">
+      <!-- Files List -->
+      <StackPanel>
+        <TextBlock Text="Files to Process" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <Border BorderBrush="{DynamicResource SystemControlBorderBrush}" BorderThickness="1" CornerRadius="4">
+          <ListBox x:Name="FilesList" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" />
+        </Border>
+      </StackPanel>
+
+      <!-- Log Output -->
+      <StackPanel Grid.Column="1" Margin="12,0,0,0">
+        <TextBlock Text="Activity Log" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <Border BorderBrush="{DynamicResource SystemControlBorderBrush}" BorderThickness="1" CornerRadius="4">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TextBox x:Name="LogBox" 
+                     IsReadOnly="True" 
+                     AcceptsReturn="True" 
+                     TextWrapping="Wrap" 
+                     Padding="8"
+                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+          </ScrollViewer>
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <!-- Status Bar -->
+    <StackPanel DockPanel.Dock="Bottom" Spacing="8">
+      <ProgressBar x:Name="Progress" Height="4" Value="0" Minimum="0" Maximum="100" />
+      <StackPanel Orientation="Horizontal" Spacing="12" Height="32">
+        <TextBlock x:Name="StatusText" Text="Ready" VerticalAlignment="Center" />
+        <TextBlock x:Name="FileCountText" Text="0 files" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+      </StackPanel>
+    </StackPanel>
+  </DockPanel>
+
+</Window>
